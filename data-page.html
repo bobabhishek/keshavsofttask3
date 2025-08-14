@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataDash - Enhanced Custom Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bs-primary: #ff5722;
+            --bs-secondary: #607d8b;
+            --bs-primary-rgb: 255, 87, 34;
+            --bs-secondary-rgb: 96, 125, 139;
+            --bs-success: #28a745;
+            --bs-warning: #ffc107;
+            --bs-info: #17a2b8;
+            --bs-danger: #dc3545;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Loading indicator */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff5722 0%, #ff7043 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .loading-overlay.hidden {
+            display: none;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #ff5722 0%, #ff7043 100%);
+            min-height: 100vh;
+            color: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 2px 0;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+        
+        .stats-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .stats-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .custom-logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .custom-logo .orange { color: #ff5722; }
+        .custom-logo .blue { color: #607d8b; }
+        
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: none;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--bs-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .btn-custom {
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .alert-custom {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="text-center">
+            <div class="spinner-border mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h3>DataDash</h3>
+            <p>Loading your dashboard...</p>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-3">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="custom-logo">
+                        <span class="orange">Data</span><span class="blue">Dash</span>
+                    </div>
+                </div>
+                
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="#dashboard" data-section="dashboard">
+                        <i class="bi bi-grid-fill me-2"></i>Dashboard
+                    </a>
+                    <a class="nav-link" href="#analytics" data-section="analytics">
+                        <i class="bi bi-bar-chart-fill me-2"></i>Analytics
+                    </a>
+                    <a class="nav-link" href="#products" data-section="products">
+                        <i class="bi bi-box-fill me-2"></i>Products
+                    </a>
+                    <a class="nav-link" href="#reports" data-section="reports">
+                        <i class="bi bi-file-earmark-text-fill me-2"></i>Reports
+                    </a>
+                    <a class="nav-link" href="#users" data-section="users">
+                        <i class="bi bi-people-fill me-2"></i>Users
+                    </a>
+                    <a class="nav-link" href="#settings" data-section="settings">
+                        <i class="bi bi-gear-fill me-2"></i>Settings
+                    </a>
+                </nav>
+                
+                <div class="mt-auto pt-4">
+                    <div class="text-center">
+                        <small class="text-white-50">DataDash v1.0.0</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content p-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">DataDash Dashboard</h2>
+                        <p class="text-muted mb-0">Real-time data visualization and analytics</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-custom" id="refresh-btn">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                        </button>
+                        <button class="btn btn-primary btn-custom" id="export-btn">
+                            <i class="bi bi-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Alert for Data Status -->
+                <div class="alert alert-info alert-custom fade-in" id="data-status" style="display: none;">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <span id="status-message">Loading data...</span>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card h-100 fade-in">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Total Users</h6>
+                                        <h3 class="mb-0" id="users-count">
+                                            <span class="loading-spinner"></span>
+                                        </h3>
+                                        <small class="text-success">
+                                            <i class="bi bi-arrow-up"></i> +12% this month
+                                        </small>
+                                    </div>
+                                    <div class="text-primary">
+                                        <i class="bi bi-people-fill fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card h-100 fade-in">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Total Orders</h6>
+                                        <h3 class="mb-0" id="orders-count">
+                                            <span class="loading-spinner"></span>
+                                        </h3>
+                                        <small class="text-success">
+                                            <i class="bi bi-arrow-up"></i> +8% this month
+                                        </small>
+                                    </div>
+                                    <div class="text-success">
+                                        <i class="bi bi-cart-fill fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card h-100 fade-in">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Revenue</h6>
+                                        <h3 class="mb-0" id="revenue-count">
+                                            <span class="loading-spinner"></span>
+                                        </h3>
+                                        <small class="text-success">
+                                            <i class="bi bi-arrow-up"></i> +15% this month
+                                        </small>
+                                    </div>
+                                    <div class="text-warning">
+                                        <i class="bi bi-currency-dollar fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="card stats-card h-100 fade-in">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Products</h6>
+                                        <h3 class="mb-0" id="products-count">
+                                            <span class="loading-spinner"></span>
+                                        </h3>
+                                        <small class="text-info">
+                                            <i class="bi bi-box"></i> Active items
+                                        </small>
+                                    </div>
+                                    <div class="text-info">
+                                        <i class="bi bi-box-seam-fill fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chart and Table Row -->
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="card table-card">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="mb-0">Product Sales Analytics</h5>
+                                <p class="text-muted mb-0">Visual representation of product pricing and performance</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="productChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 mb-4">
+                        <div class="card table-card">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="mb-0">Quick Stats</h5>
+                                <p class="text-muted mb-0">Product overview</p>
+                            </div>
+                            <div class="card-body">
+                                <div id="quick-stats">
+                                    <div class="text-center">
+                                        <div class="loading-spinner"></div>
+                                        <p class="text-muted mt-2">Loading stats...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card table-card mt-3">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="mb-0">System Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h6 class="mb-0">Data Connection</h6>
+                                        <small class="text-muted">JSON API Status</small>
+                                    </div>
+                                    <span class="status-badge bg-success" id="api-status">Connected</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h6 class="mb-0">Chart Rendering</h6>
+                                        <small class="text-muted">Chart.js Status</small>
+                                    </div>
+                                    <span class="status-badge bg-success" id="chart-status">Active</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Responsive Design</h6>
+                                        <small class="text-muted">Bootstrap 5</small>
+                                    </div>
+                                    <span class="status-badge bg-success">Ready</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card table-card">
+                            <div class="card-header bg-transparent border-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">Products Data Table</h5>
+                                        <p class="text-muted mb-0">Dynamic product information loaded from JSON</p>
+                                    </div>
+                                    <button class="btn btn-primary btn-custom" id="add-product-btn">
+                                        <i class="bi bi-plus me-1"></i>Add Product
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Product Name</th>
+                                                <th>Category</th>
+                                                <th>Price</th>
+                                                <th>Stock</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-tbody">
+                                            <tr>
+                                                <td colspan="7" class="text-center py-4">
+                                                    <div class="loading-spinner"></div>
+                                                    <p class="text-muted mt-2">Loading products...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Enhanced Data Management
+        class DataDash {
+            constructor() {
+                this.data = null;
+                this.chart = null;
+                this.init();
+            }
+            
+            async init() {
+                this.showStatus('Loading data from JSON file...', 'info');
+                await this.loadData();
+                this.setupEventListeners();
+            }
+            
+            async loadData() {
+                try {
+                    // Try multiple possible paths for the data file
+                    let response;
+                    const possiblePaths = [
+                        '/mazer/data.json',
+                        'mazer/data.json', 
+                        '/data.json',
+                        'data.json'
+                    ];
+                    
+                    for (const path of possiblePaths) {
+                        try {
+                            response = await fetch(path);
+                            if (response.ok) {
+                                console.log(`Successfully loaded data from: ${path}`);
+                                break;
+                            }
+                        } catch (e) {
+                            console.log(`Failed to load from: ${path}`);
+                            continue;
+                        }
+                    }
+                    
+                    if (response && response.ok) {
+                        this.data = await response.json();
+                        this.updateDashboard();
+                        this.showStatus('Data loaded successfully!', 'success');
+                    } else {
+                        throw new Error('Could not load data from any path');
+                    }
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    this.showStatus('Error loading data. Using fallback data.', 'warning');
+                    this.loadFallbackData();
+                }
+            }
+            
+            loadFallbackData() {
+                this.data = {
+                    users: 1247,
+                    orders: 389,
+                    revenue: 15680,
+                    products: [
+                        { id: 1, name: "Laptop", price: 800, category: "Electronics", stock: 15, status: "active" },
+                        { id: 2, name: "Headphones", price: 50, category: "Audio", stock: 45, status: "active" },
+                        { id: 3, name: "Keyboard", price: 30, category: "Accessories", stock: 78, status: "active" },
+                        { id: 4, name: "Mouse", price: 25, category: "Accessories", stock: 120, status: "active" },
+                        { id: 5, name: "Monitor", price: 200, category: "Electronics", stock: 8, status: "active" }
+                    ]
+                };
+                this.updateDashboard();
+            }
+            
+            updateDashboard() {
+                this.updateStats();
+                this.updateChart();
+                this.updateProductsTable();
+                this.updateQuickStats();
+                this.updateSystemStatus();
+                
+                // Hide loading overlay
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
+            }
+            
+            updateStats() {
+                document.getElementById('users-count').innerHTML = this.data.users.toLocaleString();
+                document.getElementById('orders-count').innerHTML = this.data.orders.toLocaleString();
+                document.getElementById('revenue-count').innerHTML = '$' + this.data.revenue.toLocaleString();
+                document.getElementById('products-count').innerHTML = this.data.products.length;
+            }
+            
+            updateChart() {
+                const ctx = document.getElementById('productChart');
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+                
+                this.chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: this.data.products.map(p => p.name),
+                        datasets: [{
+                            label: 'Price ($)',
+                            data: this.data.products.map(p => p.price),
+                            backgroundColor: [
+                                'rgba(255, 87, 34, 0.8)',
+                                'rgba(96, 125, 139, 0.8)',
+                                'rgba(40, 171, 85, 0.8)',
+                                'rgba(255, 193, 7, 0.8)',
+                                'rgba(156, 39, 176, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 87, 34, 1)',
+                                'rgba(96, 125, 139, 1)',
+                                'rgba(40, 171, 85, 1)',
+                                'rgba(255, 193, 7, 1)',
+                                'rgba(156, 39, 176, 1)'
+                            ],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: 'rgba(255,87,34,0.8)',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+            }
+            
+            updateProductsTable() {
+                const tbody = document.getElementById('products-tbody');
+                tbody.innerHTML = '';
+                
+                this.data.products.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.className = 'fade-in';
+                    row.innerHTML = `
+                        <td><strong>#${product.id}</strong></td>
+                        <td>
+                            <div>
+                                <strong>${product.name}</strong>
+                                <br><small class="text-muted">${product.category}</small>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-secondary">${product.category}</span></td>
+                        <td><strong>$${product.price.toLocaleString()}</strong></td>
+                        <td>
+                            <span class="badge ${product.stock > 20 ? 'bg-success' : product.stock > 5 ? 'bg-warning' : 'bg-danger'}">
+                                ${product.stock} units
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge bg-success">${product.status}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="dataDash.editProduct(${product.id})" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="dataDash.viewProduct(${product.id})" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="dataDash.deleteProduct(${product.id})" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            updateQuickStats() {
+                const quickStats = document.getElementById('quick-stats');
+                quickStats.innerHTML = '';
+                
+                this.data.products.forEach(product => {
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'd-flex justify-content-between align-items-center mb-3 fade-in';
+                    statDiv.innerHTML = `
+                        <div>
+                            <h6 class="mb-0">${product.name}</h6>
+                            <small class="text-muted">${product.category} • ${product.stock} in stock</small>
+                        </div>
+                        <span class="badge bg-primary">$${product.price}</span>
+                    `;
+                    quickStats.appendChild(statDiv);
+                });
+            }
+            
+            updateSystemStatus() {
+                document.getElementById('api-status').textContent = 'Connected';
+                document.getElementById('chart-status').textContent = 'Active';
+            }
+            
+            showStatus(message, type) {
+                const statusDiv = document.getElementById('data-status');
+                const statusMessage = document.getElementById('status-message');
+                
+                statusMessage.textContent = message;
+                statusDiv.className = `alert alert-${type} alert-custom fade-in`;
+                statusDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+            
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                        
+                        const section = link.getAttribute('data-section');
+                        this.showStatus(`Navigated to ${section} section`, 'info');
+                    });
+                });
+                
+                // Refresh button
+                document.getElementById('refresh-btn').addEventListener('click', () => {
+                    this.showStatus('Refreshing data...', 'info');
+                    this.loadData();
+                });
+                
+                // Export button
+                document.getElementById('export-btn').addEventListener('click', () => {
+                    this.exportData();
+                });
+                
+                // Add product button
+                document.getElementById('add-product-btn').addEventListener('click', () => {
+                    this.addProduct();
+                });
+            }
+            
+            editProduct(id) {
+                const product = this.data.products.find(p => p.id === id);
+                if (product) {
+                    alert(`Edit Product #${id}\nName: ${product.name}\nPrice: $${product.price}\n\nThis would open an edit modal in a real application.`);
+                }
+            }
+            
+            viewProduct(id) {
+                const product = this.data.products.find(p => p.id === id);
+                if (product) {
+                    alert(`Product Details:\nID: ${product.id}\nName: ${product.name}\nCategory: ${product.category}\nPrice: $${product.price}\nStock: ${product.stock}\nStatus: ${product.status}`);
+                }
+            }
+            
+            deleteProduct(id) {
+                const product = this.data.products.find(p => p.id === id);
+                if (product && confirm(`Are you sure you want to delete "${product.name}"?`)) {
+                    this.data.products = this.data.products.filter(p => p.id !== id);
+                    this.updateDashboard();
+                    this.showStatus(`Product "${product.name}" deleted successfully!`, 'success');
+                }
+            }
+            
+            addProduct() {
+                const newProduct = {
+                    id: Math.max(...this.data.products.map(p => p.id)) + 1,
+                    name: "New Product",
+                    price: 100,
+                    category: "General",
+                    stock: 10,
+                    status: "active"
+                };
+                
+                this.data.products.push(newProduct);
+                this.updateDashboard();
+                this.showStatus('New product added successfully!', 'success');
+            }
+            
+            exportData() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'datadash-export.json';
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                this.showStatus('Data exported successfully!', 'success');
+            }
+        }
+        
+        // Initialize the dashboard
+        let dataDash;
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing DataDash...');
+            try {
+                dataDash = new DataDash();
+                console.log('DataDash initialized successfully');
+            } catch (error) {
+                console.error('Error initializing DataDash:', error);
+                // Show error on page
+                document.body.innerHTML = `
+                    <div class="container mt-5">
+                        <div class="alert alert-danger">
+                            <h4>Error Loading Dashboard</h4>
+                            <p>There was an error initializing the dashboard. Please check the console for details.</p>
+                            <p>Error: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

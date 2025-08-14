@@ -1,0 +1,25 @@
+{
+  "users": 1247,
+  "orders": 389,
+  "revenue": 15680,
+  "products": [
+    { "id": 1, "name": "Laptop", "price": 800, "category": "Electronics", "stock": 15, "status": "active" },
+    { "id": 2, "name": "Headphones", "price": 50, "category": "Audio", "stock": 45, "status": "active" },
+    { "id": 3, "name": "Keyboard", "price": 30, "category": "Accessories", "stock": 78, "status": "active" },
+    { "id": 4, "name": "Mouse", "price": 25, "category": "Accessories", "stock": 120, "status": "active" },
+    { "id": 5, "name": "Monitor", "price": 200, "category": "Electronics", "stock": 8, "status": "active" }
+  ],
+  "analytics": {
+    "monthly_sales": [1200, 1350, 1100, 1400, 1600, 1800, 1700, 1900, 2100, 2000, 2200, 2400],
+    "top_categories": [
+      { "name": "Electronics", "sales": 45 },
+      { "name": "Audio", "sales": 30 },
+      { "name": "Accessories", "sales": 25 }
+    ]
+  },
+  "system": {
+    "version": "1.0.0",
+    "last_updated": "2024-01-15T10:30:00Z",
+    "status": "operational"
+  }
+}

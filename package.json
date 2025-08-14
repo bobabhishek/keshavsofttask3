@@ -1,0 +1,38 @@
+{
+  "name": "datadash-custom-mazer",
+  "version": "1.0.0",
+  "description": "Custom Mazer Dashboard - Front-end customization and data integration demonstration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "npx serve . -p 3000",
+    "build": "echo 'No build process required for static files'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "dashboard",
+    "bootstrap",
+    "mazer",
+    "frontend",
+    "data-visualization",
+    "chartjs",
+    "responsive"
+  ],
+  "author": "DataDash Developer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/keshavsofttask3.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
